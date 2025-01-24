@@ -1,126 +1,13 @@
-import random
 import os
 import json
 from colorama import Fore, Style
-
-# Utility function to clear the screen
-def clear_screen():
-    os.system('cls' if os.name == 'nt' else 'clear')
+from car import Car, Part
+from event import Event
+from utils import clear_screen
 
 # Ensure the save directory exists
 SAVE_DIR = "saved_games"
 os.makedirs(SAVE_DIR, exist_ok=True)
-
-class Car:
-    def __init__(self):
-        self.speed = 50
-        self.acceleration = 50
-        self.handling = 50
-        self.durability = 100
-        self.fuel_efficiency = 50
-        self.parts = []
-
-    def install_part(self, part):
-        if not isinstance(part, Part):
-            raise ValueError("Invalid part. Expected an instance of Part.")
-        self.parts.append(part)
-        self.speed += part.speed
-        self.acceleration += part.acceleration
-        self.handling += part.handling
-        self.durability += part.durability
-        self.fuel_efficiency += part.fuel_efficiency
-
-    def uninstall_part(self, part_index):
-        if 0 <= part_index < len(self.parts):
-            part = self.parts.pop(part_index)
-            self.speed -= part.speed
-            self.acceleration -= part.acceleration
-            self.handling -= part.handling
-            self.durability -= part.durability
-            self.fuel_efficiency -= part.fuel_efficiency
-            return part
-        else:
-            raise IndexError("Invalid part index.")
-
-    def to_dict(self):
-        return {
-            "speed": self.speed,
-            "acceleration": self.acceleration,
-            "handling": self.handling,
-            "durability": self.durability,
-            "fuel_efficiency": self.fuel_efficiency,
-            "parts": [part.name for part in self.parts]
-        }
-
-    def from_dict(self, data):
-        self.speed = data["speed"]
-        self.acceleration = data["acceleration"]
-        self.handling = data["handling"]
-        self.durability = data["durability"]
-        self.fuel_efficiency = data["fuel_efficiency"]
-        self.parts = [Part(name) for name in data["parts"]]
-   
-    def take_damage(self, damage):
-        self.durability -= damage
-   
-    def is_destroyed(self):
-        return self.durability <= 0
-
-class Part:
-    def __init__(self, name, speed=0, acceleration=0, handling=0, durability=0, fuel_efficiency=0):
-        self.name = name
-        self.speed = speed
-        self.acceleration = acceleration
-        self.handling = handling
-        self.durability = durability
-        self.fuel_efficiency = fuel_efficiency
-
-class Event:
-    def __init__(self, name, difficulty, reward):
-        self.name = name
-        self.difficulty = difficulty
-        self.reward = reward
-        self.modifier = self.generate_modifier()
-
-    def generate_modifier(self):
-        modifiers = [
-            {"name": "Rainy Weather", "handling_penalty": 10},
-            {"name": "Icy Roads", "handling_penalty": 20},
-            {"name": "Hot Weather", "durability_penalty": 15},
-            {"name": "High Winds", "speed_penalty": 10},
-            {"name": "Clear Skies", "boost": 10},
-        ]
-        return random.choice(modifiers)
-
-    def apply_modifier(self, car):
-        if "handling_penalty" in self.modifier:
-            car.handling -= self.modifier["handling_penalty"]
-        if "durability_penalty" in self.modifier:
-            car.durability -= self.modifier["durability_penalty"]
-        if "speed_penalty" in self.modifier:
-            car.speed -= self.modifier["speed_penalty"]
-        if "boost" in self.modifier:
-            car.speed += self.modifier["boost"]
-
-    def compete(self, car):
-        print(f"Event: {self.name}")
-        print(f"Difficulty: {self.difficulty}")
-        print(f"Modifier: {self.modifier['name']}")
-
-        self.apply_modifier(car)
-        
-        # Calculate success chance
-        success_chance = max(0.1, min((car.speed + car.handling + car.acceleration) / (self.difficulty * 100), 1))
-        success_roll = random.random()
-
-        if success_roll < success_chance:
-            print(Fore.GREEN + "You succeeded in the event!" + Style.RESET_ALL)
-            return True
-        else:
-            damage = random.randint(10 * self.difficulty, 30 * self.difficulty)
-            print(Fore.RED + f"You failed the event and took {damage} damage." + Style.RESET_ALL)
-            car.take_damage(damage)
-            return False
 
 class Game:
     def __init__(self):
