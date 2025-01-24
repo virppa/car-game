@@ -5,6 +5,7 @@ from car import Car, Part
 from event import Event
 from utils import clear_screen
 from constants import SAVE_DIR, EVENT_MODIFIERS
+from inventory import Inventory
 # Ensure the save directory exists
 
 os.makedirs(SAVE_DIR, exist_ok=True)
@@ -12,7 +13,7 @@ os.makedirs(SAVE_DIR, exist_ok=True)
 class Game:
     def __init__(self):
         self.car = Car()
-        self.inventory = []
+        self.inventory = Inventory()
         self.events = [
             Event("Drag Race", difficulty=2, reward=Part("Turbocharger", speed=20, acceleration=10)),
             Event("Off-Road Rally", difficulty=3, reward=Part("All-Terrain Tires", handling=15, durability=10)),
@@ -23,7 +24,7 @@ class Game:
     def save_game(self, slot_number):
         data = {
             "car": self.car.to_dict(),
-            "inventory": [part.name for part in self.inventory]
+            "inventory": [part.name for part in self.inventory.items]
         }
         filename = os.path.join(SAVE_DIR, f"save_slot_{slot_number}.json")
         with open(filename, "w") as file:
@@ -36,7 +37,7 @@ class Game:
             with open(filename, "r") as file:
                 data = json.load(file)
                 self.car.from_dict(data["car"])
-                self.inventory = [Part(name) for name in data["inventory"]]
+                self.inventory.items = [Part(name) for name in data["inventory"]]
             print(Fore.GREEN + f"Game loaded from slot {slot_number}." + Style.RESET_ALL)
         except FileNotFoundError:
             print(Fore.RED + f"No save file found in slot {slot_number}." + Style.RESET_ALL)
@@ -85,14 +86,11 @@ class Game:
 
         try:
             choice = int(input("Enter the number of the part to uninstall: ")) - 1
-            if 0 <= choice < len(self.car.parts):
-                part = self.car.uninstall_part(choice)
-                self.inventory.append(part)
-                print(Fore.GREEN + f"Uninstalled {part.name}." + Style.RESET_ALL)
-            else:
-                print(Fore.RED + "Invalid choice. Please select a valid part number." + Style.RESET_ALL)
-        except ValueError:
-            print(Fore.RED + "Invalid input. Please enter a number." + Style.RESET_ALL)
+            part = self.car.uninstall_part(choice)
+            self.inventory.add_item(part)
+            print(Fore.GREEN + f"Uninstalled {part.name}." + Style.RESET_ALL)
+        except (ValueError, IndexError):
+            print(Fore.RED + "Invalid choice. Please enter a valid part number." + Style.RESET_ALL)
         input("\nPress Enter to return to the garage...")
 
     def main_menu(self):
@@ -147,7 +145,7 @@ class Game:
 
                 if success:
                     print(Fore.GREEN + f"You earned the reward: {event.reward.name}" + Style.RESET_ALL)
-                    self.inventory.append(event.reward)
+                    self.inventory.add_item(event.reward)  # Use add_item instead of append
             else:
                 print(Fore.RED + "Invalid choice. Please select a valid event number." + Style.RESET_ALL)
         except ValueError:
@@ -161,26 +159,20 @@ class Game:
             print(f"Parts installed: {[part.name for part in self.car.parts]}")
 
     def install_part(self):
-        if not self.inventory:
+        if self.inventory.is_empty():
             print("Your inventory is empty. No parts available to install.")
             input("\nPress Enter to return to the main menu...")
             return
 
-        print("\n--- Inventory ---")
-        print(f"{'Index':<5}{'Part Name':<20}{'Stats':<30}")
-        for i, part in enumerate(self.inventory):
-            stats = f"Speed={part.speed}, Acc={part.acceleration}, Handling={part.handling}"
-            print(f"{i + 1:<5}{part.name:<20}{stats:<30}")
+        print(self.inventory)  # Use Inventory's __str__ method for display
         try:
             choice = int(input("Enter the number of the part to install: ")) - 1
-            if 0 <= choice < len(self.inventory):
-                part = self.inventory.pop(choice)
-                self.car.install_part(part)
-                print(Fore.GREEN + f"Installed {part.name}." + Style.RESET_ALL)
-            else:
-                print(Fore.RED + "Invalid choice. Please select a valid part number." + Style.RESET_ALL)
-        except ValueError:
-            print(Fore.RED + "Invalid input. Please enter a number." + Style.RESET_ALL)
+            part = self.inventory.remove_item(choice)
+            self.car.install_part(part)
+            print(Fore.GREEN + f"Installed {part.name}." + Style.RESET_ALL)
+        except (ValueError, IndexError):
+            print(Fore.RED + "Invalid choice. Please enter a valid part number." + Style.RESET_ALL)
+        input("\nPress Enter to return to the main menu...")
 
     def run(self):
         print("Welcome to the Strategic Car Game!")
