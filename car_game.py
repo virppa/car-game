@@ -15,9 +15,9 @@ class Game:
         self.car = Car()
         self.inventory = Inventory()
         self.events = [
-            Event("Drag Race", difficulty=2, reward=Part("Turbocharger", speed=20, acceleration=10)),
-            Event("Off-Road Rally", difficulty=3, reward=Part("All-Terrain Tires", handling=15, durability=10)),
-            Event("Endurance Race", difficulty=4, reward=Part("Fuel Saver", fuel_efficiency=20))
+            Event("Drag Race", difficulty=2),
+            Event("Off-Road Rally", difficulty=3),
+            Event("Endurance Race", difficulty=4)
         ]
         self.game_over = False
 
@@ -144,7 +144,7 @@ class Game:
                 success = event.compete(self.car)
 
                 if success:
-                    print(Fore.GREEN + f"You earned the reward: {event.reward.name}" + Style.RESET_ALL)
+                    print(Fore.GREEN + f"You earned the reward: {event.reward}" + Style.RESET_ALL)
                     self.inventory.add_item(event.reward)  # Use add_item instead of append
             else:
                 print(Fore.RED + "Invalid choice. Please select a valid event number." + Style.RESET_ALL)

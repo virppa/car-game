@@ -1,17 +1,39 @@
 import random
 from colorama import Fore, Style
+from part_generator import generate_part_with_rarity
 from constants import EVENT_MODIFIERS
 
 class Event:
-    def __init__(self, name, difficulty, reward):
+    def __init__(self, name, difficulty):
         self.name = name
         self.difficulty = difficulty
-        self.reward = reward
         self.modifier = self.generate_modifier()
+        self.reward = self.generate_reward()
 
     def generate_modifier(self):
         modifiers = EVENT_MODIFIERS
         return random.choice(modifiers)
+
+    def generate_reward(self):
+        # Define weight multipliers for rarities based on event difficulty
+        rarity_weights = {
+            "Common": max(10 - self.difficulty * 2, 1),  # Higher difficulty decreases Common likelihood
+            "Rare": max(self.difficulty * 2, 1),
+            "Epic": max(self.difficulty - 2, 1) if self.difficulty > 2 else 0,
+            "Legendary": max(self.difficulty - 4, 1) if self.difficulty > 4 else 0,
+        }
+
+        # Filter rarities with zero weight
+        rarities = [rarity for rarity, weight in rarity_weights.items() if weight > 0]
+        weights = [rarity_weights[rarity] for rarity in rarities]
+
+        # Select a weighted random rarity
+        selected_rarity = random.choices(rarities, weights=weights, k=1)[0]
+
+        # Generate a part with the selected rarity
+        part = generate_part_with_rarity(selected_rarity)
+        print(f"Generated reward for {self.name}: {part}")  # Debug line
+        return part
 
     def apply_modifier(self, car):
         if "handling_penalty" in self.modifier:
@@ -27,6 +49,7 @@ class Event:
         print(f"Event: {self.name}")
         print(f"Difficulty: {self.difficulty}")
         print(f"Modifier: {self.modifier['name']}")
+        print(f"Reward: {self.reward}")
 
         self.apply_modifier(car)
         

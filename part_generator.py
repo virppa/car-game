@@ -43,3 +43,27 @@ def generate_part():
 
 def generate_parts(num_parts=10):
     return [generate_part() for _ in range(num_parts)]
+
+def generate_part_with_rarity(rarity):
+    part_type = random.choice(PART_TYPES)  # Randomly select a part type
+    rarity_data = RARITY_LEVELS[rarity]
+
+    stats = {
+        "speed": random.randint(rarity_data["min_stat"], rarity_data["max_stat"]),
+        "acceleration": random.randint(rarity_data["min_stat"], rarity_data["max_stat"]),
+        "handling": random.randint(rarity_data["min_stat"], rarity_data["max_stat"]),
+        "durability": random.randint(rarity_data["min_stat"], rarity_data["max_stat"]),
+        "fuel_efficiency": random.randint(rarity_data["min_stat"], rarity_data["max_stat"])
+    }
+
+    trait = random.choice(TRAITS) if random.random() < rarity_data["trait_chance"] else None
+
+    return Part(
+        name=f"{rarity} {part_type}",  # Include both rarity and part type
+        speed=stats["speed"],
+        acceleration=stats["acceleration"],
+        handling=stats["handling"],
+        durability=stats["durability"],
+        fuel_efficiency=stats["fuel_efficiency"],
+        trait=trait
+    )
