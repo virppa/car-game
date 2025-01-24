@@ -1,4 +1,10 @@
 import random
+import os
+from colorama import Fore, Style
+
+# Utility function to clear the screen
+def clear_screen():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 class Car:
     def __init__(self):
@@ -49,11 +55,11 @@ class Event:
         success_roll = random.random()
 
         if success_roll < success_chance:
-            print("You succeeded in the event!")
+            print(Fore.GREEN + "You succeeded in the event!" + Style.RESET_ALL)
             return True
         else:
             damage = random.randint(10 * self.difficulty, 30 * self.difficulty)
-            print(f"You failed the event and took {damage} damage.")
+            print(Fore.RED + f"You failed the event and took {damage} damage." + Style.RESET_ALL)
             car.take_damage(damage)
             return False
 
@@ -68,14 +74,26 @@ class Game:
         ]
         self.game_over = False
 
+    def view_stats(self):
+        clear_screen()
+        print("=== Car Stats ===")
+        print(f"Speed: {self.car.speed}")
+        print(f"Acceleration: {self.car.acceleration}")
+        print(f"Handling: {self.car.handling}")
+        print(f"Durability: {self.car.durability}")
+        print(f"Fuel Efficiency: {self.car.fuel_efficiency}")
+        print(f"Parts Installed: {[part.name for part in self.car.parts]}")
+        input("\nPress Enter to return to the main menu...")
+
     def play_turn(self):
+        clear_screen()
         print("\n--- New Turn ---")
         print(f"Car Stats: Speed={self.car.speed}, Acceleration={self.car.acceleration}, Handling={self.car.handling}, Durability={self.car.durability}, Fuel Efficiency={self.car.fuel_efficiency}")
         
         # Choose an event
         print("Choose an event:")
         for i, event in enumerate(self.events):
-            print(f"{i + 1}: {event.name} (Difficulty: {event.difficulty})")
+            print(f"{i + 1}: {event.name} (Difficulty: {event.difficulty}) - Reward: {event.reward.name}")
         try:
             choice = int(input("Enter the number of the event: ")) - 1
             if 0 <= choice < len(self.events):
@@ -83,16 +101,16 @@ class Game:
                 success = event.compete(self.car)
 
                 if success:
-                    print(f"You earned the reward: {event.reward.name}")
+                    print(Fore.GREEN + f"You earned the reward: {event.reward.name}" + Style.RESET_ALL)
                     self.inventory.append(event.reward)
             else:
-                print("Invalid choice. Please select a valid event number.")
+                print(Fore.RED + "Invalid choice. Please select a valid event number." + Style.RESET_ALL)
         except ValueError:
-            print("Invalid input. Please enter a number.")
+            print(Fore.RED + "Invalid input. Please enter a number." + Style.RESET_ALL)
 
         if self.car.is_destroyed():
             self.game_over = True
-            print("Your car is destroyed. Game over!")
+            print(Fore.RED + "Your car is destroyed. Game over!" + Style.RESET_ALL)
             print("Final Performance Summary:")
             print(f"Speed: {self.car.speed}, Acceleration: {self.car.acceleration}, Handling: {self.car.handling}, Durability: {self.car.durability}, Fuel Efficiency: {self.car.fuel_efficiency}")
             print(f"Parts installed: {[part.name for part in self.car.parts]}")
@@ -100,29 +118,49 @@ class Game:
     def install_part(self):
         if not self.inventory:
             print("Your inventory is empty. No parts available to install.")
+            input("\nPress Enter to return to the main menu...")
             return
 
         print("\n--- Inventory ---")
+        print(f"{'Index':<5}{'Part Name':<20}{'Stats':<30}")
         for i, part in enumerate(self.inventory):
-            print(f"{i + 1}: {part.name} (Speed={part.speed}, Acceleration={part.acceleration}, Handling={part.handling}, Durability={part.durability}, Fuel Efficiency={part.fuel_efficiency})")
+            stats = f"Speed={part.speed}, Acc={part.acceleration}, Handling={part.handling}"
+            print(f"{i + 1:<5}{part.name:<20}{stats:<30}")
         try:
             choice = int(input("Enter the number of the part to install: ")) - 1
             if 0 <= choice < len(self.inventory):
                 part = self.inventory.pop(choice)
                 self.car.install_part(part)
-                print(f"Installed {part.name}.")
+                print(Fore.GREEN + f"Installed {part.name}." + Style.RESET_ALL)
             else:
-                print("Invalid choice. Please select a valid part number.")
+                print(Fore.RED + "Invalid choice. Please select a valid part number." + Style.RESET_ALL)
         except ValueError:
-            print("Invalid input. Please enter a number.")
+            print(Fore.RED + "Invalid input. Please enter a number." + Style.RESET_ALL)
+
+    def main_menu(self):
+        while not self.game_over:
+            clear_screen()
+            print("=== Strategic Car Game ===")
+            print("1. Start Event")
+            print("2. View Car Stats")
+            print("3. Exit Game")
+            choice = input("Enter your choice: ")
+            
+            if choice == "1":
+                self.play_turn()
+                if not self.game_over:
+                    self.install_part()
+            elif choice == "2":
+                self.view_stats()
+            elif choice == "3":
+                print("Thanks for playing!")
+                break
+            else:
+                print(Fore.RED + "Invalid choice. Try again." + Style.RESET_ALL)
 
     def run(self):
         print("Welcome to the Strategic Car Game!")
-        while not self.game_over:
-            self.play_turn()
-            if not self.game_over:
-                self.install_part()
-        print("Thanks for playing!")
+        self.main_menu()
 
 # Start the game
 game = Game()
