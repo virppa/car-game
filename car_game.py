@@ -1,10 +1,15 @@
 import random
 import os
+import json
 from colorama import Fore, Style
 
 # Utility function to clear the screen
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
+
+# Ensure the save directory exists
+SAVE_DIR = "saved_games"
+os.makedirs(SAVE_DIR, exist_ok=True)
 
 class Car:
     def __init__(self):
@@ -25,9 +30,27 @@ class Car:
         self.durability += part.durability
         self.fuel_efficiency += part.fuel_efficiency
 
+    def to_dict(self):
+        return {
+            "speed": self.speed,
+            "acceleration": self.acceleration,
+            "handling": self.handling,
+            "durability": self.durability,
+            "fuel_efficiency": self.fuel_efficiency,
+            "parts": [part.name for part in self.parts]
+        }
+
+    def from_dict(self, data):
+        self.speed = data["speed"]
+        self.acceleration = data["acceleration"]
+        self.handling = data["handling"]
+        self.durability = data["durability"]
+        self.fuel_efficiency = data["fuel_efficiency"]
+        self.parts = [Part(name) for name in data["parts"]]
+   
     def take_damage(self, damage):
         self.durability -= damage
-
+   
     def is_destroyed(self):
         return self.durability <= 0
 
@@ -74,6 +97,27 @@ class Game:
         ]
         self.game_over = False
 
+    def save_game(self, slot_number):
+        data = {
+            "car": self.car.to_dict(),
+            "inventory": [part.name for part in self.inventory]
+        }
+        filename = os.path.join(SAVE_DIR, f"save_slot_{slot_number}.json")
+        with open(filename, "w") as file:
+            json.dump(data, file, indent=4)
+        print(Fore.GREEN + f"Game saved to slot {slot_number}." + Style.RESET_ALL)
+
+    def load_game(self, slot_number):
+        filename = os.path.join(SAVE_DIR, f"save_slot_{slot_number}.json")
+        try:
+            with open(filename, "r") as file:
+                data = json.load(file)
+                self.car.from_dict(data["car"])
+                self.inventory = [Part(name) for name in data["inventory"]]
+            print(Fore.GREEN + f"Game loaded from slot {slot_number}." + Style.RESET_ALL)
+        except FileNotFoundError:
+            print(Fore.RED + f"No save file found in slot {slot_number}." + Style.RESET_ALL)
+
     def view_stats(self):
         clear_screen()
         print("=== Car Stats ===")
@@ -84,6 +128,41 @@ class Game:
         print(f"Fuel Efficiency: {self.car.fuel_efficiency}")
         print(f"Parts Installed: {[part.name for part in self.car.parts]}")
         input("\nPress Enter to return to the main menu...")
+
+    def main_menu(self):
+        while not self.game_over:
+            clear_screen()
+            print("=== Strategic Car Game ===")
+            print("1. Start Event")
+            print("2. View Car Stats")
+            print("3. Save Game")
+            print("4. Load Game")
+            print("5. Exit Game")
+            choice = input("Enter your choice: ")
+            
+            if choice == "1":
+                self.play_turn()
+                if not self.game_over:
+                    self.install_part()
+            elif choice == "2":
+                self.view_stats()
+            elif choice == "3":
+                slot = int(input("Enter save slot (1-3): "))
+                if 1 <= slot <= 3:
+                    self.save_game(slot)
+                else:
+                    print(Fore.RED + "Invalid slot number. Please choose between 1 and 3." + Style.RESET_ALL)
+            elif choice == "4":
+                slot = int(input("Enter save slot to load (1-3): "))
+                if 1 <= slot <= 3:
+                    self.load_game(slot)
+                else:
+                    print(Fore.RED + "Invalid slot number. Please choose between 1 and 3." + Style.RESET_ALL)
+            elif choice == "5":
+                print("Thanks for playing!")
+                break
+            else:
+                print(Fore.RED + "Invalid choice. Try again." + Style.RESET_ALL)
 
     def play_turn(self):
         clear_screen()
@@ -136,27 +215,6 @@ class Game:
                 print(Fore.RED + "Invalid choice. Please select a valid part number." + Style.RESET_ALL)
         except ValueError:
             print(Fore.RED + "Invalid input. Please enter a number." + Style.RESET_ALL)
-
-    def main_menu(self):
-        while not self.game_over:
-            clear_screen()
-            print("=== Strategic Car Game ===")
-            print("1. Start Event")
-            print("2. View Car Stats")
-            print("3. Exit Game")
-            choice = input("Enter your choice: ")
-            
-            if choice == "1":
-                self.play_turn()
-                if not self.game_over:
-                    self.install_part()
-            elif choice == "2":
-                self.view_stats()
-            elif choice == "3":
-                print("Thanks for playing!")
-                break
-            else:
-                print(Fore.RED + "Invalid choice. Try again." + Style.RESET_ALL)
 
     def run(self):
         print("Welcome to the Strategic Car Game!")
