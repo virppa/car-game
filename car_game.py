@@ -10,6 +10,8 @@ class Car:
         self.parts = []
 
     def install_part(self, part):
+        if not isinstance(part, Part):
+            raise ValueError("Invalid part. Expected an instance of Part.")
         self.parts.append(part)
         self.speed += part.speed
         self.acceleration += part.acceleration
@@ -43,14 +45,14 @@ class Event:
         print(f"Difficulty: {self.difficulty}")
         
         # Calculate success chance
-        success_chance = (car.speed + car.handling + car.acceleration) / (self.difficulty * 100)
+        success_chance = max(0.1, min((car.speed + car.handling + car.acceleration) / (self.difficulty * 100), 1))
         success_roll = random.random()
 
         if success_roll < success_chance:
             print("You succeeded in the event!")
             return True
         else:
-            damage = random.randint(10, 30)
+            damage = random.randint(10 * self.difficulty, 30 * self.difficulty)
             print(f"You failed the event and took {damage} damage.")
             car.take_damage(damage)
             return False
@@ -74,30 +76,45 @@ class Game:
         print("Choose an event:")
         for i, event in enumerate(self.events):
             print(f"{i + 1}: {event.name} (Difficulty: {event.difficulty})")
-        choice = int(input("Enter the number of the event: ")) - 1
+        try:
+            choice = int(input("Enter the number of the event: ")) - 1
+            if 0 <= choice < len(self.events):
+                event = self.events[choice]
+                success = event.compete(self.car)
 
-        if 0 <= choice < len(self.events):
-            event = self.events[choice]
-            success = event.compete(self.car)
-
-            if success:
-                print(f"You earned the reward: {event.reward.name}")
-                self.inventory.append(event.reward)
+                if success:
+                    print(f"You earned the reward: {event.reward.name}")
+                    self.inventory.append(event.reward)
+            else:
+                print("Invalid choice. Please select a valid event number.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
 
         if self.car.is_destroyed():
             self.game_over = True
             print("Your car is destroyed. Game over!")
+            print("Final Performance Summary:")
+            print(f"Speed: {self.car.speed}, Acceleration: {self.car.acceleration}, Handling: {self.car.handling}, Durability: {self.car.durability}, Fuel Efficiency: {self.car.fuel_efficiency}")
+            print(f"Parts installed: {[part.name for part in self.car.parts]}")
 
     def install_part(self):
+        if not self.inventory:
+            print("Your inventory is empty. No parts available to install.")
+            return
+
         print("\n--- Inventory ---")
         for i, part in enumerate(self.inventory):
             print(f"{i + 1}: {part.name} (Speed={part.speed}, Acceleration={part.acceleration}, Handling={part.handling}, Durability={part.durability}, Fuel Efficiency={part.fuel_efficiency})")
-        choice = int(input("Enter the number of the part to install: ")) - 1
-
-        if 0 <= choice < len(self.inventory):
-            part = self.inventory.pop(choice)
-            self.car.install_part(part)
-            print(f"Installed {part.name}.")
+        try:
+            choice = int(input("Enter the number of the part to install: ")) - 1
+            if 0 <= choice < len(self.inventory):
+                part = self.inventory.pop(choice)
+                self.car.install_part(part)
+                print(f"Installed {part.name}.")
+            else:
+                print("Invalid choice. Please select a valid part number.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
 
     def run(self):
         print("Welcome to the Strategic Car Game!")
