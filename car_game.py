@@ -30,6 +30,18 @@ class Car:
         self.durability += part.durability
         self.fuel_efficiency += part.fuel_efficiency
 
+    def uninstall_part(self, part_index):
+        if 0 <= part_index < len(self.parts):
+            part = self.parts.pop(part_index)
+            self.speed -= part.speed
+            self.acceleration -= part.acceleration
+            self.handling -= part.handling
+            self.durability -= part.durability
+            self.fuel_efficiency -= part.fuel_efficiency
+            return part
+        else:
+            raise IndexError("Invalid part index.")
+
     def to_dict(self):
         return {
             "speed": self.speed,
@@ -153,12 +165,55 @@ class Game:
         print(f"Parts Installed: {[part.name for part in self.car.parts]}")
         input("\nPress Enter to return to the main menu...")
 
+    def garage_menu(self):
+        while True:
+            clear_screen()
+            print("=== Garage Menu ===")
+            print("1. View Car Stats")
+            print("2. Install Part")
+            print("3. Uninstall Part")
+            print("4. Return to Main Menu")
+            choice = input("Enter your choice: ")
+
+            if choice == "1":
+                self.view_stats()
+            elif choice == "2":
+                self.install_part()
+            elif choice == "3":
+                self.uninstall_part()
+            elif choice == "4":
+                break
+            else:
+                print(Fore.RED + "Invalid choice. Try again." + Style.RESET_ALL)
+
+    def uninstall_part(self):
+        if not self.car.parts:
+            print("No parts installed on the car to uninstall.")
+            input("\nPress Enter to return to the garage...")
+            return
+
+        print("\n--- Installed Parts ---")
+        for i, part in enumerate(self.car.parts):
+            print(f"{i + 1}: {part.name} (Speed={part.speed}, Acceleration={part.acceleration}, Handling={part.handling}, Durability={part.durability}, Fuel Efficiency={part.fuel_efficiency})")
+
+        try:
+            choice = int(input("Enter the number of the part to uninstall: ")) - 1
+            if 0 <= choice < len(self.car.parts):
+                part = self.car.uninstall_part(choice)
+                self.inventory.append(part)
+                print(Fore.GREEN + f"Uninstalled {part.name}." + Style.RESET_ALL)
+            else:
+                print(Fore.RED + "Invalid choice. Please select a valid part number." + Style.RESET_ALL)
+        except ValueError:
+            print(Fore.RED + "Invalid input. Please enter a number." + Style.RESET_ALL)
+        input("\nPress Enter to return to the garage...")
+
     def main_menu(self):
         while not self.game_over:
             clear_screen()
             print("=== Strategic Car Game ===")
             print("1. Start Event")
-            print("2. View Car Stats")
+            print("2. Garage")
             print("3. Save Game")
             print("4. Load Game")
             print("5. Exit Game")
@@ -169,7 +224,7 @@ class Game:
                 if not self.game_over:
                     self.install_part()
             elif choice == "2":
-                self.view_stats()
+                self.garage_menu()
             elif choice == "3":
                 slot = int(input("Enter save slot (1-3): "))
                 if 1 <= slot <= 3:
