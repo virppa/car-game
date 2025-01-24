@@ -4,9 +4,9 @@ from colorama import Fore, Style
 from car import Car, Part
 from event import Event
 from utils import clear_screen
-
+from constants import SAVE_DIR, EVENT_MODIFIERS
 # Ensure the save directory exists
-SAVE_DIR = "saved_games"
+
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 class Game:

@@ -1,5 +1,6 @@
 import random
 from colorama import Fore, Style
+from constants import EVENT_MODIFIERS
 
 class Event:
     def __init__(self, name, difficulty, reward):
@@ -9,13 +10,7 @@ class Event:
         self.modifier = self.generate_modifier()
 
     def generate_modifier(self):
-        modifiers = [
-            {"name": "Rainy Weather", "handling_penalty": 10},
-            {"name": "Icy Roads", "handling_penalty": 20},
-            {"name": "Hot Weather", "durability_penalty": 15},
-            {"name": "High Winds", "speed_penalty": 10},
-            {"name": "Clear Skies", "boost": 10},
-        ]
+        modifiers = EVENT_MODIFIERS
         return random.choice(modifiers)
 
     def apply_modifier(self, car):
